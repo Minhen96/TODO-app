@@ -1,0 +1,73 @@
+{
+  "type": "record",
+  "name": "AuthEvent",
+  "namespace": "com.taskplatform.schemas",
+  "doc": "Authentication event for audit logging",
+  "fields": [
+    {
+      "name": "eventId",
+      "type": "string",
+      "doc": "Unique identifier for this event (UUID)"
+    },
+    {
+      "name": "eventType",
+      "type": {
+        "type": "enum",
+        "name": "AuthEventType",
+        "symbols": [
+          "LOGIN_SUCCESS",
+          "LOGIN_FAILED",
+          "LOGOUT",
+          "TOKEN_REFRESH",
+          "TOKEN_INVALID",
+          "REGISTER_SUCCESS",
+          "REGISTER_FAILED",
+          "PASSWORD_CHANGED"
+        ]
+      },
+      "doc": "Type of authentication event"
+    },
+    {
+      "name": "eventTimestamp",
+      "type": "long",
+      "logicalType": "timestamp-millis",
+      "doc": "When this event occurred"
+    },
+    {
+      "name": "userId",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "User ID if known (UUID)"
+    },
+    {
+      "name": "username",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Username attempted"
+    },
+    {
+      "name": "ipAddress",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Client IP address"
+    },
+    {
+      "name": "userAgent",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Client user agent"
+    },
+    {
+      "name": "failureReason",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Reason for failure if applicable"
+    },
+    {
+      "name": "traceId",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "OpenTelemetry trace ID"
+    }
+  ]
+}

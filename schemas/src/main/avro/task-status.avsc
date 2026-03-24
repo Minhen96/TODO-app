@@ -1,0 +1,16 @@
+{
+  "type": "enum",
+  "name": "TaskStatus",
+  "namespace": "com.taskplatform.schemas",
+  "doc": "Status of a task in the processing pipeline",
+  "symbols": [
+    "PENDING",
+    "VALIDATING",
+    "PROCESSING",
+    "COMPLETED",
+    "FAILED",
+    "CANCELLED",
+    "DEAD_LETTER"
+  ],
+  "default": "PENDING"
+}

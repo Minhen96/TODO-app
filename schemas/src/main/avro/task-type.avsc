@@ -1,0 +1,14 @@
+{
+  "type": "enum",
+  "name": "TaskType",
+  "namespace": "com.taskplatform.schemas",
+  "doc": "Type of task determining processing behavior",
+  "symbols": [
+    "COMPUTE",
+    "IO",
+    "NOTIFICATION",
+    "SCHEDULED",
+    "BATCH"
+  ],
+  "default": "COMPUTE"
+}

@@ -1,0 +1,22 @@
+FROM eclipse-temurin:21-jdk-alpine AS builder
+WORKDIR /app
+COPY mvnw .
+COPY .mvn .mvn
+COPY pom.xml .
+COPY schemas/pom.xml schemas/
+COPY orchestrator-service/pom.xml orchestrator-service/
+RUN chmod +x mvnw && ./mvnw dependency:go-offline -pl orchestrator-service -am -B
+COPY schemas/src schemas/src
+COPY orchestrator-service/src orchestrator-service/src
+RUN ./mvnw package -pl orchestrator-service -am -DskipTests -B
+
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+RUN addgroup -g 1001 appgroup && adduser -u 1001 -G appgroup -D appuser
+COPY --from=builder /app/orchestrator-service/target/*.jar app.jar
+RUN chown -R appuser:appgroup /app
+USER appuser
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8083/actuator/health || exit 1
+EXPOSE 8083
+ENTRYPOINT ["java", "-jar", "app.jar"]

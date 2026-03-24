@@ -1,0 +1,13 @@
+{
+  "type": "enum",
+  "name": "TaskPriority",
+  "namespace": "com.taskplatform.schemas",
+  "doc": "Priority level for task processing order",
+  "symbols": [
+    "LOW",
+    "NORMAL",
+    "HIGH",
+    "CRITICAL"
+  ],
+  "default": "NORMAL"
+}

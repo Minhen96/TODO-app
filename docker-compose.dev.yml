@@ -1,0 +1,39 @@
+version: '3.8'
+
+# Development overrides - run services locally, only infrastructure in Docker
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+
+services:
+  # Disable application services for local development
+  api-gateway:
+    profiles:
+      - disabled
+
+  task-service:
+    profiles:
+      - disabled
+
+  orchestrator-service:
+    profiles:
+      - disabled
+
+  worker-service:
+    profiles:
+      - disabled
+
+  notification-service:
+    profiles:
+      - disabled
+
+  # Expose Kafka on localhost for local development
+  kafka:
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+
+  # Expose Postgres on localhost
+  postgres:
+    ports:
+      - "5432:5432"

@@ -1,0 +1,12 @@
+{
+  "type": "enum",
+  "name": "UserRole",
+  "namespace": "com.taskplatform.schemas",
+  "doc": "User role for authorization",
+  "symbols": [
+    "USER",
+    "ADMIN",
+    "SERVICE"
+  ],
+  "default": "USER"
+}

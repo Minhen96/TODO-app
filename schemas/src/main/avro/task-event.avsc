@@ -1,0 +1,143 @@
+{
+  "type": "record",
+  "name": "TaskEvent",
+  "namespace": "com.taskplatform.schemas",
+  "doc": "Event representing a task in the processing pipeline. Used across all Kafka topics.",
+  "fields": [
+    {
+      "name": "eventId",
+      "type": "string",
+      "doc": "Unique identifier for this event instance (UUID)"
+    },
+    {
+      "name": "eventType",
+      "type": {
+        "type": "enum",
+        "name": "EventType",
+        "symbols": ["CREATED", "VALIDATED", "PROCESSING", "COMPLETED", "FAILED", "RETRYING", "DEAD_LETTER"]
+      },
+      "doc": "Type of event in the task lifecycle"
+    },
+    {
+      "name": "eventTimestamp",
+      "type": "long",
+      "logicalType": "timestamp-millis",
+      "doc": "Timestamp when this event was created"
+    },
+    {
+      "name": "taskId",
+      "type": "string",
+      "doc": "Unique identifier for the task (UUID)"
+    },
+    {
+      "name": "taskName",
+      "type": "string",
+      "doc": "Human-readable name for the task"
+    },
+    {
+      "name": "taskType",
+      "type": "TaskType",
+      "doc": "Type of task determining processing behavior"
+    },
+    {
+      "name": "taskStatus",
+      "type": "TaskStatus",
+      "doc": "Current status of the task"
+    },
+    {
+      "name": "taskPriority",
+      "type": "TaskPriority",
+      "default": "NORMAL",
+      "doc": "Priority level for processing order"
+    },
+    {
+      "name": "description",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Optional description of the task"
+    },
+    {
+      "name": "payload",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "JSON-encoded payload data for the task"
+    },
+    {
+      "name": "result",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "JSON-encoded result data after processing"
+    },
+    {
+      "name": "errorMessage",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Error message if task failed"
+    },
+    {
+      "name": "errorCode",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Error code for categorizing failures"
+    },
+    {
+      "name": "retryCount",
+      "type": "int",
+      "default": 0,
+      "doc": "Number of retry attempts made"
+    },
+    {
+      "name": "maxRetries",
+      "type": "int",
+      "default": 3,
+      "doc": "Maximum number of retry attempts allowed"
+    },
+    {
+      "name": "scheduledAt",
+      "type": ["null", "long"],
+      "default": null,
+      "logicalType": "timestamp-millis",
+      "doc": "When the task should be executed (for scheduled tasks)"
+    },
+    {
+      "name": "startedAt",
+      "type": ["null", "long"],
+      "default": null,
+      "logicalType": "timestamp-millis",
+      "doc": "When task processing started"
+    },
+    {
+      "name": "completedAt",
+      "type": ["null", "long"],
+      "default": null,
+      "logicalType": "timestamp-millis",
+      "doc": "When task processing completed"
+    },
+    {
+      "name": "traceId",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "OpenTelemetry trace ID for distributed tracing"
+    },
+    {
+      "name": "spanId",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "OpenTelemetry span ID for distributed tracing"
+    },
+    {
+      "name": "sourceService",
+      "type": "string",
+      "doc": "Name of the service that produced this event"
+    },
+    {
+      "name": "metadata",
+      "type": {
+        "type": "map",
+        "values": "string"
+      },
+      "default": {},
+      "doc": "Additional metadata as key-value pairs"
+    }
+  ]
+}
