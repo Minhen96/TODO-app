@@ -42,6 +42,12 @@
                             <stringType>String</stringType>
                             <fieldVisibility>PRIVATE</fieldVisibility>
                             <enableDecimalLogicalType>true</enableDecimalLogicalType>
+                            <imports>
+                                <import>${project.basedir}/src/main/avro/user-role.avsc</import>
+                                <import>${project.basedir}/src/main/avro/task-type.avsc</import>
+                                <import>${project.basedir}/src/main/avro/task-status.avsc</import>
+                                <import>${project.basedir}/src/main/avro/task-priority.avsc</import>
+                            </imports>
                         </configuration>
                     </execution>
                 </executions>
