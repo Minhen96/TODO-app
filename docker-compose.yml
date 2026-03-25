@@ -96,6 +96,22 @@ services:
       timeout: 5s
       retries: 5
 
+  # ============== Cache ==============
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - task-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # ============== Database ==============
   postgres:
     image: postgres:16-alpine
@@ -193,6 +209,8 @@ services:
     depends_on:
       auth-service:
         condition: service_healthy
+      redis:
+        condition: service_healthy
       tempo:
         condition: service_started
     networks:
@@ -256,6 +274,8 @@ services:
         condition: service_healthy
       schema-registry:
         condition: service_healthy
+      redis:
+        condition: service_healthy
       tempo:
         condition: service_started
     networks:
@@ -278,6 +298,8 @@ services:
       kafka:
         condition: service_healthy
       schema-registry:
+        condition: service_healthy
+      redis:
         condition: service_healthy
       tempo:
         condition: service_started
@@ -302,6 +324,8 @@ services:
         condition: service_healthy
       schema-registry:
         condition: service_healthy
+      redis:
+        condition: service_healthy
       tempo:
         condition: service_started
     networks:
@@ -325,6 +349,8 @@ services:
         condition: service_healthy
       schema-registry:
         condition: service_healthy
+      redis:
+        condition: service_healthy
       tempo:
         condition: service_started
     networks:
@@ -336,6 +362,7 @@ networks:
 
 volumes:
   postgres-data:
+  redis-data:
   prometheus-data:
   loki-data:
   tempo-data:

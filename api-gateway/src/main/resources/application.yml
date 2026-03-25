@@ -35,6 +35,10 @@ spring:
             - Path=/api/auth/login, /api/auth/register, /api/auth/refresh
           filters:
             - RewritePath=/api/auth/(?<segment>.*), /api/auth/${segment}
+            - name: CircuitBreaker
+              args:
+                name: authService
+                fallbackUri: forward:/fallback/auth
 
         # Auth Service - Protected endpoints
         - id: auth-service-protected
@@ -43,6 +47,10 @@ spring:
             - Path=/api/auth/**
           filters:
             - AuthenticationFilter
+            - name: CircuitBreaker
+              args:
+                name: authService
+                fallbackUri: forward:/fallback/auth
 
         # Task Service - All endpoints require authentication
         - id: task-service
@@ -52,6 +60,16 @@ spring:
           filters:
             - AuthenticationFilter
             - RewritePath=/api/tasks/(?<segment>.*), /api/tasks/${segment}
+            - name: CircuitBreaker
+              args:
+                name: taskService
+                fallbackUri: forward:/fallback/task
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
+                redis-rate-limiter.requestedTokens: 1
+                key-resolver: "#{@userKeyResolver}"
 
         # Orchestrator Service (internal, usually not exposed)
         - id: orchestrator-service
@@ -60,6 +78,10 @@ spring:
             - Path=/api/orchestrator/**
           filters:
             - AuthenticationFilter
+            - name: CircuitBreaker
+              args:
+                name: orchestratorService
+                fallbackUri: forward:/fallback/orchestrator
 
         # Health endpoints - no auth required
         - id: health
@@ -99,6 +121,13 @@ logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{traceId:-}] %-5level %logger{36} - %msg%n"
 
+# Redis
+spring:
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
 # Resilience4j Circuit Breaker
 resilience4j:
   circuitbreaker:
@@ -108,10 +137,24 @@ resilience4j:
         failureRateThreshold: 50
         waitDurationInOpenState: 10000
         permittedNumberOfCallsInHalfOpenState: 3
+      taskService:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10000
+        permittedNumberOfCallsInHalfOpenState: 3
+      orchestratorService:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10000
+        permittedNumberOfCallsInHalfOpenState: 3
   timelimiter:
     instances:
       authService:
         timeoutDuration: 3s
+      taskService:
+        timeoutDuration: 5s
+      orchestratorService:
+        timeoutDuration: 5s
 
 ---
 # Docker profile
@@ -120,6 +163,11 @@ spring:
     activate:
       on-profile: docker
 
+  data:
+    redis:
+      host: redis
+      port: 6379
+
   cloud:
     gateway:
       routes:
@@ -127,6 +175,12 @@ spring:
           uri: http://auth-service:8081
           predicates:
             - Path=/api/auth/login, /api/auth/register, /api/auth/refresh
+          filters:
+            - RewritePath=/api/auth/(?<segment>.*), /api/auth/${segment}
+            - name: CircuitBreaker
+              args:
+                name: authService
+                fallbackUri: forward:/fallback/auth
 
         - id: auth-service-protected
           uri: http://auth-service:8081
@@ -134,6 +188,10 @@ spring:
             - Path=/api/auth/**
           filters:
             - AuthenticationFilter
+            - name: CircuitBreaker
+              args:
+                name: authService
+                fallbackUri: forward:/fallback/auth
 
         - id: task-service
           uri: http://task-service:8082
@@ -141,6 +199,17 @@ spring:
             - Path=/api/tasks/**
           filters:
             - AuthenticationFilter
+            - RewritePath=/api/tasks/(?<segment>.*), /api/tasks/${segment}
+            - name: CircuitBreaker
+              args:
+                name: taskService
+                fallbackUri: forward:/fallback/task
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
+                redis-rate-limiter.requestedTokens: 1
+                key-resolver: "#{@userKeyResolver}"
 
         - id: orchestrator-service
           uri: http://orchestrator-service:8083
@@ -148,6 +217,10 @@ spring:
             - Path=/api/orchestrator/**
           filters:
             - AuthenticationFilter
+            - name: CircuitBreaker
+              args:
+                name: orchestratorService
+                fallbackUri: forward:/fallback/orchestrator
 
         - id: health
           uri: http://auth-service:8081
