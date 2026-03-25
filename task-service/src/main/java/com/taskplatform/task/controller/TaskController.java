@@ -3,6 +3,7 @@ package com.taskplatform.task.controller;
 import com.taskplatform.task.model.dto.CreateTaskRequest;
 import com.taskplatform.task.model.dto.TaskResponse;
 import com.taskplatform.task.model.entity.Task;
+import com.taskplatform.task.service.IdempotencyService;
 import com.taskplatform.task.service.TaskService;
 import io.micrometer.core.annotation.Timed;
 import jakarta.validation.Valid;
@@ -16,7 +17,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Optional;
 import java.util.UUID;
+
+import static net.logstash.logback.argument.StructuredArguments.kv;
 
 @RestController
 @RequestMapping("/api/tasks")
@@ -25,14 +29,30 @@ import java.util.UUID;
 public class TaskController {
 
     private final TaskService taskService;
+    private final IdempotencyService idempotencyService;
 
     @PostMapping
     @Timed(value = "task.create", description = "Time taken to create a task")
     public ResponseEntity<TaskResponse> createTask(
             @Valid @RequestBody CreateTaskRequest request,
-            @RequestHeader("X-User-Id") String userId) {
+            @RequestHeader("X-User-Id") String userId,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) {
+
+        if (idempotencyKey != null) {
+            Optional<TaskResponse> cached = idempotencyService.get(idempotencyKey);
+            if (cached.isPresent()) {
+                log.info("Returning cached response for idempotency key",
+                        kv("idempotencyKey", idempotencyKey));
+                return ResponseEntity.ok(cached.get());
+            }
+        }
 
         TaskResponse response = taskService.createTask(request, UUID.fromString(userId));
+
+        if (idempotencyKey != null) {
+            idempotencyService.store(idempotencyKey, response);
+        }
+
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 

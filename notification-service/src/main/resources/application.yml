@@ -5,6 +5,11 @@ spring:
   application:
     name: notification-service
 
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
   kafka:
     bootstrap-servers: localhost:29092
     consumer:
@@ -41,6 +46,11 @@ spring:
   config:
     activate:
       on-profile: docker
+  data:
+    redis:
+      host: redis
+      port: 6379
+
   kafka:
     bootstrap-servers: kafka:9092
     properties:
