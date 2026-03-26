@@ -8,7 +8,12 @@ COPY mvnw .
 COPY .mvn .mvn
 COPY pom.xml .
 COPY schemas/pom.xml schemas/
+COPY api-gateway/pom.xml api-gateway/
 COPY auth-service/pom.xml auth-service/
+COPY task-service/pom.xml task-service/
+COPY orchestrator-service/pom.xml orchestrator-service/
+COPY worker-service/pom.xml worker-service/
+COPY notification-service/pom.xml notification-service/
 
 # Download dependencies
 RUN chmod +x mvnw && ./mvnw dependency:go-offline -pl auth-service -am -B
