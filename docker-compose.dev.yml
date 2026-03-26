@@ -9,6 +9,10 @@ services:
     profiles:
       - disabled
 
+  auth-service:
+    profiles:
+      - disabled
+
   task-service:
     profiles:
       - disabled
@@ -22,6 +26,10 @@ services:
       - disabled
 
   notification-service:
+    profiles:
+      - disabled
+
+  frontend:
     profiles:
       - disabled
 

@@ -83,7 +83,7 @@ services:
       kafka:
         condition: service_healthy
     ports:
-      - "8085:8081"
+      - "8086:8081"
     environment:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:9092
@@ -101,7 +101,7 @@ services:
     image: redis:7-alpine
     container_name: redis
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
       - redis-data:/data
     networks:
@@ -353,6 +353,17 @@ services:
         condition: service_healthy
       tempo:
         condition: service_started
+    networks:
+      - task-network
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: frontend
+    ports:
+      - "3002:80"
+    depends_on:
+      - api-gateway
     networks:
       - task-network
 
