@@ -62,6 +62,7 @@ A microservices-based task processing system built with Java 21, Spring Boot 3.2
 | Metrics | Micrometer + Prometheus | Per-service metrics |
 | Logging | Logback + Loki | Structured JSON logs |
 | Dashboards | Grafana | Unified observability UI |
+| Frontend | SvelteKit + nginx | SPA served via Docker, proxies `/api/*` to gateway |
 
 ---
 
@@ -70,7 +71,8 @@ A microservices-based task processing system built with Java 21, Spring Boot 3.2
 ```
 TODO-app/
 ├── pom.xml                          # Parent POM (multi-module)
-├── docker-compose.yml               # Full infrastructure stack
+├── mvnw / mvnw.cmd                  # Maven wrapper (used by CI)
+├── docker-compose.yml               # Full stack (infra + services + frontend)
 ├── docker-compose.dev.yml           # Dev mode (infrastructure only)
 ├── .env                             # Environment variables
 │
@@ -89,6 +91,18 @@ TODO-app/
 ├── orchestrator-service/            # Validates tasks, routes to workers
 ├── worker-service/                  # Executes tasks, retry, DLQ
 ├── notification-service/            # Consumes completed/failed events
+│
+├── frontend/                        # SvelteKit SPA
+│   ├── Dockerfile                   # node:20 build → nginx:alpine serve
+│   ├── nginx.conf                   # Proxies /api/* → api-gateway, SPA fallback
+│   └── src/
+│       ├── lib/api.js               # Fetch wrapper with auto token refresh
+│       ├── lib/stores.js            # Auth store (token + user)
+│       └── routes/
+│           ├── login/               # Login page
+│           ├── register/            # Register page
+│           ├── tasks/               # Task list + create modal
+│           └── tasks/[id]/          # Task detail view
 │
 ├── nginx/
 │   └── taskplatform.conf            # VPS Nginx config (SSL, rate limiting)
@@ -112,47 +126,57 @@ TODO-app/
 - Java 21+
 - Maven 3.9+
 - Docker & Docker Compose
+- Node.js 20+ *(only if running frontend locally outside Docker)*
 
-### 1. Start Infrastructure
+### Option A — Full Stack in Docker (recommended)
+
+Runs everything: infrastructure + all services + frontend.
 
 ```bash
-# Starts: Kafka, Zookeeper, Schema Registry, PostgreSQL,
-#         Prometheus, Grafana, Loki, Tempo
+docker-compose up -d
+```
+
+| URL | What |
+|-----|------|
+| http://localhost:3001 | Frontend (SvelteKit) |
+| http://localhost:8080 | API Gateway |
+| http://localhost:3000 | Grafana (admin/admin) |
+| http://localhost:9090 | Prometheus |
+
+### Option B — Dev Mode (infrastructure in Docker, code runs locally)
+
+Use this when actively developing a specific service — faster restarts, no Docker rebuilds.
+
+```bash
+# Step 1 — start infrastructure only
 docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
-```
 
-### 2. Verify Infrastructure
-
-```bash
-docker-compose ps
-
-# Verify Kafka topics were created
-docker exec -it kafka kafka-topics --list --bootstrap-server localhost:9092
-
-# Verify Schema Registry
-curl http://localhost:8085/subjects
-```
-
-### 3. Build All Services
-
-```bash
-./mvnw clean package -DskipTests
-```
-
-### 4. Run Services
-
-Open a terminal for each service:
-
-```bash
+# Step 2 — run backend services (one terminal each)
 ./mvnw spring-boot:run -pl auth-service
 ./mvnw spring-boot:run -pl task-service
 ./mvnw spring-boot:run -pl orchestrator-service
 ./mvnw spring-boot:run -pl worker-service
 ./mvnw spring-boot:run -pl notification-service
 ./mvnw spring-boot:run -pl api-gateway
+
+# Step 3 — run frontend
+cd frontend && npm install && npm run dev
+# http://localhost:3001
 ```
 
-### 5. Test the Flow
+### Verify Infrastructure
+
+```bash
+docker-compose ps
+
+# Kafka topics
+docker exec -it kafka kafka-topics --list --bootstrap-server localhost:9092
+
+# Schema Registry
+curl http://localhost:8086/subjects
+```
+
+### Test the API (curl)
 
 ```bash
 # 1. Register
@@ -160,7 +184,7 @@ curl -X POST http://localhost:8080/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{"username": "testuser", "email": "test@example.com", "password": "Password123"}'
 
-# 2. Login → get accessToken
+# 2. Login → copy accessToken from response
 curl -X POST http://localhost:8080/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username": "testuser", "password": "Password123"}'
@@ -314,6 +338,41 @@ JWT tokens:
 
 - Consumes: `task.completed`, `task.failed`
 - Logs notifications (production would integrate email/Slack/webhook)
+
+---
+
+## Frontend (`:3001`)
+
+A SvelteKit SPA served via nginx inside Docker.
+
+### Pages
+
+| Route | Description |
+|-------|-------------|
+| `/login` | Sign in with username + password |
+| `/register` | Create a new account |
+| `/tasks` | Task list with status filters, pagination, create modal |
+| `/tasks/:id` | Task detail — fields, timeline, error info, trace ID |
+
+### How it connects to the backend
+
+The frontend container runs nginx which **proxies `/api/*` requests to `api-gateway:8080`** on the internal Docker network. The browser never talks to the backend directly — no CORS issues, no hardcoded backend URLs in the JS bundle.
+
+```
+Browser → localhost:3001/api/tasks
+       → nginx (frontend container)
+       → http://api-gateway:8080/api/tasks
+```
+
+### Running locally (outside Docker)
+
+```bash
+cd frontend
+npm install
+npm run dev     # http://localhost:3001
+```
+
+> Note: In dev mode (`npm run dev`), Vite proxies `/api/*` to `http://localhost:8080` automatically so the backend services must be running locally or via `docker-compose.dev.yml`.
 
 ---
 
@@ -541,8 +600,8 @@ docker exec -it kafka kafka-consumer-groups --bootstrap-server localhost:9092 --
 ### Schema Registry
 
 ```bash
-curl http://localhost:8085/subjects                              # list schemas
-curl http://localhost:8085/subjects/task.created-value/versions # list versions
+curl http://localhost:8086/subjects                              # list schemas
+curl http://localhost:8086/subjects/task.created-value/versions # list versions
 ```
 
 ### Database

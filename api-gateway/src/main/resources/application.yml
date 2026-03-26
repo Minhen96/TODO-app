@@ -5,6 +5,11 @@ spring:
   application:
     name: api-gateway
 
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
   cloud:
     gateway:
       # Global CORS configuration
@@ -120,13 +125,6 @@ logging:
     org.springframework.cloud.gateway: DEBUG
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{traceId:-}] %-5level %logger{36} - %msg%n"
-
-# Redis
-spring:
-  data:
-    redis:
-      host: localhost
-      port: 6379
 
 # Resilience4j Circuit Breaker
 resilience4j:
