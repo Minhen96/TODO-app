@@ -425,11 +425,33 @@ Nginx handles: SSL termination, rate limiting (10 req/s API, 5 req/s auth), secu
 
 `.github/workflows/ci.yml` runs on every push to `main`:
 
-1. **Build** — Maven build + tests
+1. **Build** — Maven build + tests (uses `./mvnw`)
 2. **Docker** — Build and push images to GHCR (one job per service)
 3. **Deploy** — SSH to VPS, `docker-compose pull && docker-compose up -d`
 
-Required GitHub secrets: `VPS_HOST`, `VPS_USERNAME`, `VPS_SSH_KEY`
+#### Required Setup
+
+**1. Create a `production` environment**
+
+Go to repo → **Settings → Environments → New environment** → name it `production`.
+
+**2. Add secrets to the `production` environment**
+
+| Secret | Value |
+|--------|-------|
+| `VPS_HOST` | Your VPS IP or hostname |
+| `VPS_USERNAME` | SSH user (e.g. `ubuntu`) |
+| `VPS_SSH_KEY` | Private SSH key (contents of `~/.ssh/id_rsa`) |
+
+> Secrets must be added to the **environment**, not just repository secrets, because the deploy job uses `environment: production`.
+
+**3. Maven wrapper permissions**
+
+The `mvnw` script is committed with the executable bit set (`chmod 755`). If you re-generate it on Windows, run:
+
+```bash
+git update-index --chmod=+x mvnw
+```
 
 ---
 
